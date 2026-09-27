@@ -10,6 +10,8 @@ public class GameMenu : MonoBehaviour
     GUIStyle _key;
     GUIStyle _action;
     GUIStyle _note;
+    GUIStyle _story;
+    GUIStyle _quote;
     GUIStyle _button;
     Texture2D _dim;
     Texture2D _panel;
@@ -18,6 +20,7 @@ public class GameMenu : MonoBehaviour
     Texture2D _line;
     Texture2D _buttonBg;
     float _scale = -1f;
+    bool _help;
 
     void Awake()
     {
@@ -36,7 +39,14 @@ public class GameMenu : MonoBehaviour
     {
         if (Playing)
             return;
-        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetMouseButtonDown(0))
+        if (_help)
+        {
+            if (Input.GetKeyDown(KeyCode.Escape))
+                _help = false;
+            return;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
             Begin();
     }
 
@@ -44,60 +54,122 @@ public class GameMenu : MonoBehaviour
     {
         Playing = true;
         Time.timeScale = 1f;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
     void OnGUI()
     {
         if (!Playing)
-            DrawStart();
+        {
+            if (_help)
+                DrawHelp();
+            else
+                DrawStart();
+        }
     }
 
     void DrawStart()
     {
-        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), _dim);
-
-        float w = Mathf.Min(640f, Screen.width - 28f);
-        float h = Mathf.Min(430f, Screen.height - 28f);
-        float scale = Mathf.Clamp(Mathf.Min(w / 640f, h / 430f), 0.62f, 1f);
+        float w = Mathf.Min(500f, Screen.width * 0.46f);
+        float h = Screen.height - 28f;
+        float scale = Mathf.Clamp(Mathf.Min(w / 500f, h / 640f), 0.62f, 1f);
         EnsureStyles(scale);
 
-        var panel = new Rect((Screen.width - w) * 0.5f, (Screen.height - h) * 0.5f, w, h);
+        var panel = new Rect(14f, 14f, w, h);
         GUI.DrawTexture(panel, _panel);
         GUI.DrawTexture(new Rect(panel.x, panel.y, 4f * scale, panel.height), _bar);
 
-        float pad = 18f * scale;
-        float titleH = 28f * scale;
-        GUI.Label(new Rect(panel.x + pad, panel.y + 8f * scale, panel.width - pad * 2f, 14f * scale), "SCIENCE CITY", _kicker);
-        GUI.Label(new Rect(panel.x + pad, panel.y + 20f * scale, panel.width - pad * 2f, titleH), "AETHER", _title);
-        float lineY = panel.y + 52f * scale;
+        float pad = 20f * scale;
+        GUI.Label(new Rect(panel.x + pad, panel.y + 16f * scale, panel.width - pad * 2f, 16f * scale), "SCIENCE CITY", _kicker);
+        GUI.Label(new Rect(panel.x + pad, panel.y + 32f * scale, panel.width - pad * 2f, 40f * scale), "AETHER", _title);
+        GUI.Label(new Rect(panel.x + pad, panel.y + 72f * scale, panel.width - pad * 2f, 16f * scale), "EPISODE I    THE LAST LIGHT", _note);
+        float lineY = panel.y + 94f * scale;
+        GUI.DrawTexture(new Rect(panel.x + pad, lineY, panel.width - pad * 2f, 1f), _line);
+
+        const string story =
+            "A long time from now, in a city that is still awake...\n\n" +
+            "The core of AETHER is failing. In five minutes the lights go out.\n\n" +
+            "ASUNA is the last scientist inside the walls. The lab is unfinished. The signal towers are silent. The sky rings are still open.\n\n" +
+            "The guard robots have forgotten their orders. They fire on sight.\n\n" +
+            "She has three lives, one ship, and one clock.\n\n" +
+            "Finish the work, and the city lives. Fall three times, and it ends.\n\n" +
+            "This is her story. This is why you play.";
+
+        float buttonH = 36f * scale;
+        float gap = 8f * scale;
+        float buttonsY = panel.yMax - pad - buttonH;
+        var crawl = new Rect(panel.x + pad, lineY + 10f * scale, panel.width - pad * 2f, buttonsY - lineY - 62f * scale);
+        DrawCrawl(crawl, story);
+        GUI.Label(new Rect(panel.x + pad, buttonsY - 42f * scale, panel.width - pad * 2f, 34f * scale), "Hold the light. Five minutes.\nShe is the one who steps in.", _quote);
+
+        float half = (panel.width - pad * 2f - gap) * 0.5f;
+        var help = new Rect(panel.x + pad, buttonsY, half, buttonH);
+        var start = new Rect(help.xMax + gap, buttonsY, half, buttonH);
+        GUI.DrawTexture(help, _chip);
+        GUI.DrawTexture(start, _buttonBg);
+        if (GUI.Button(help, "HOW TO PLAY", _button))
+            _help = true;
+        if (GUI.Button(start, "ENTER    START", _button))
+            Begin();
+    }
+
+    void DrawCrawl(Rect view, string story)
+    {
+        float contentH = 640f * _scale;
+        float travel = contentH + view.height;
+        float y = view.height - Mathf.Repeat(Time.unscaledTime * 14f * _scale, travel);
+        GUI.BeginGroup(view);
+        GUI.Label(new Rect(8f, y, view.width - 16f, contentH), story, _story);
+        GUI.EndGroup();
+        float fade = 22f * _scale;
+        GUI.DrawTexture(new Rect(view.x, view.y, view.width, fade), _panel);
+        GUI.DrawTexture(new Rect(view.x, view.yMax - fade, view.width, fade), _panel);
+    }
+
+    void DrawHelp()
+    {
+        float w = Mathf.Min(500f, Screen.width * 0.46f);
+        float h = Screen.height - 28f;
+        float scale = Mathf.Clamp(Mathf.Min(w / 500f, h / 640f), 0.62f, 1f);
+        EnsureStyles(scale);
+
+        var panel = new Rect(14f, 14f, w, h);
+        GUI.DrawTexture(panel, _panel);
+        GUI.DrawTexture(new Rect(panel.x, panel.y, 4f * scale, panel.height), _bar);
+
+        float pad = 20f * scale;
+        GUI.Label(new Rect(panel.x + pad, panel.y + 18f * scale, panel.width - pad * 2f, 28f * scale), "HOW TO PLAY", _title);
+        float lineY = panel.y + 56f * scale;
         GUI.DrawTexture(new Rect(panel.x + pad, lineY, panel.width - pad * 2f, 1f), _line);
 
         float left = panel.x + pad;
         float colW = (panel.width - pad * 3f) * 0.5f;
         float right = left + colW + pad;
-        float yLeft = lineY + 10f * scale;
+        float yLeft = lineY + 16f * scale;
         float yRight = yLeft;
-        float rowH = 22f * scale;
-        float gap = 5f * scale;
+        float rowH = 26f * scale;
+        float gap = 8f * scale;
 
         Section(ref yLeft, left, "MOVE");
         Row(ref yLeft, left, colW, rowH, gap, "WASD", "Walk");
         Row(ref yLeft, left, colW, rowH, gap, "SHIFT", "Sprint");
         Row(ref yLeft, left, colW, rowH, gap, "SPACE", "Jump  /  climb");
         Row(ref yLeft, left, colW, rowH, gap, "CTRL", "Descend");
-        Row(ref yLeft, left, colW, rowH, gap, "F", "Board ship");
+        Row(ref yLeft, left, colW, rowH, gap, "MOUSE", "Look");
 
-        Section(ref yRight, right, "LAB");
-        Row(ref yRight, right, colW, rowH, gap, "DOOR", "Cyan gate");
-        Row(ref yRight, right, colW, rowH, gap, "E", "Finish task");
-        Row(ref yRight, right, colW, rowH, gap, "TIME", "60 seconds");
-        Row(ref yRight, right, colW, rowH, gap, "FIRE", "Left click");
-        Row(ref yRight, right, colW, rowH, gap, "MOUSE", "Look around");
+        Section(ref yRight, right, "MISSION");
+        Row(ref yRight, right, colW, rowH, gap, "CLICK", "Fire");
+        Row(ref yRight, right, colW, rowH, gap, "F", "Board ship");
+        Row(ref yRight, right, colW, rowH, gap, "E", "Do a task");
+        Row(ref yRight, right, colW, rowH, gap, "DOOR", "Cyan lab");
+        Row(ref yRight, right, colW, rowH, gap, "TIME", "5:00");
 
-        float buttonH = 32f * scale;
-        var button = new Rect(panel.x + pad, panel.yMax - pad - buttonH, panel.width - pad * 2f, buttonH);
-        GUI.DrawTexture(button, _buttonBg);
-        GUI.Label(button, "ENTER    START", _button);
+        float buttonH = 36f * scale;
+        var back = new Rect(panel.x + pad, panel.yMax - pad - buttonH, panel.width - pad * 2f, buttonH);
+        GUI.DrawTexture(back, _buttonBg);
+        if (GUI.Button(back, "BACK", _button))
+            _help = false;
     }
 
     void Section(ref float y, float x, string title)
@@ -126,12 +198,16 @@ public class GameMenu : MonoBehaviour
             return;
 
         _scale = scale;
-        _title = Make(Mathf.RoundToInt(26f * scale), FontStyle.Bold, TextAnchor.MiddleLeft, new Color(0.82f, 0.95f, 1f));
+        _title = Make(Mathf.RoundToInt(36f * scale), FontStyle.Bold, TextAnchor.MiddleLeft, new Color(0.82f, 0.95f, 1f));
         _kicker = Make(Mathf.RoundToInt(11f * scale), FontStyle.Bold, TextAnchor.MiddleLeft, new Color(0.35f, 0.78f, 0.92f));
         _section = Make(Mathf.RoundToInt(11f * scale), FontStyle.Bold, TextAnchor.MiddleLeft, new Color(0.55f, 0.86f, 0.95f));
         _key = Make(Mathf.RoundToInt(11f * scale), FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.75f, 0.94f, 1f));
         _action = Make(Mathf.RoundToInt(13f * scale), FontStyle.Normal, TextAnchor.MiddleLeft, new Color(0.9f, 0.94f, 0.97f));
-        _note = Make(Mathf.RoundToInt(12f * scale), FontStyle.Normal, TextAnchor.MiddleLeft, new Color(0.7f, 0.8f, 0.86f));
+        _note = Make(Mathf.RoundToInt(11f * scale), FontStyle.Bold, TextAnchor.MiddleLeft, new Color(1f, 0.82f, 0.28f));
+        _story = Make(Mathf.RoundToInt(14f * scale), FontStyle.Bold, TextAnchor.UpperCenter, new Color(1f, 0.86f, 0.32f));
+        _story.wordWrap = true;
+        _quote = Make(Mathf.RoundToInt(13f * scale), FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.95f, 0.9f, 0.55f));
+        _quote.wordWrap = true;
         _button = Make(Mathf.RoundToInt(13f * scale), FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);
     }
 

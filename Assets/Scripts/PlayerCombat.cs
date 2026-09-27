@@ -11,6 +11,20 @@ public class PlayerCombat : MonoBehaviour
     bool _arm;
 
     public bool LockedOn { get; private set; }
+    public float Zoom { get; private set; }
+    bool _aimTight;
+    float _aimDist;
+    Vector3 _aimWorld;
+    Vital _zoomStick;
+
+    public void ClearZoom()
+    {
+        Zoom = 0f;
+        _zoomStick = null;
+        _aimTight = false;
+        if (_camera != null)
+            _camera.SetAim(Vector3.zero, 0f);
+    }
 
     public void Bind(CityCamera camera, Transform muzzle)
     {
@@ -24,6 +38,9 @@ public class PlayerCombat : MonoBehaviour
         if (!GameMenu.Playing || _camera == null || _vital == null || !_vital.Alive)
         {
             _arm = true;
+            Zoom = 0f;
+            _zoomStick = null;
+            _camera?.SetAim(Vector3.zero, 0f);
             return;
         }
 
@@ -39,11 +56,30 @@ public class PlayerCombat : MonoBehaviour
         if (motor != null && motor.Locked && !driving)
         {
             LockedOn = false;
+            _zoomStick = null;
+            Zoom = Mathf.MoveTowards(Zoom, 0f, Time.deltaTime * 3f);
+            _camera.SetAim(_aimWorld, Zoom);
             return;
         }
 
         Camera cam = _camera.GetComponent<Camera>();
-        Vital target = cam == null ? null : PickTarget(cam);
+        Vital target = null;
+        if (driving)
+        {
+            _zoomStick = null;
+            Zoom = 0f;
+            _camera.SetAim(Vector3.zero, 0f);
+            target = cam == null ? null : PickTarget(cam);
+            _aimTight = false;
+        }
+        else
+        {
+            target = cam == null ? null : PickTarget(cam);
+            float wantZoom = _aimTight ? Mathf.InverseLerp(8f, 120f, _aimDist) : 0f;
+            Zoom = Mathf.MoveTowards(Zoom, wantZoom, Time.deltaTime * 3.4f);
+            _camera.SetAim(_aimWorld, Zoom);
+        }
+
         LockedOn = target != null;
 
         if (!Input.GetMouseButton(0) || Time.time < _next || cam == null)
@@ -76,8 +112,11 @@ public class PlayerCombat : MonoBehaviour
     {
         Vital best = null;
         float bestPixels = float.MaxValue;
+        _aimTight = false;
         var center = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
         float reach = Mathf.Max(150f, Screen.height * 0.28f);
+        float tight = Mathf.Max(42f, Screen.height * 0.07f);
+        float hold = tight * 3.2f;
         SoldierFight[] soldiers = Object.FindObjectsByType<SoldierFight>(FindObjectsSortMode.None);
         for (int i = 0; i < soldiers.Length; i++)
         {
@@ -87,25 +126,56 @@ public class PlayerCombat : MonoBehaviour
 
             Vector3 chest = soldiers[i].transform.position + Vector3.up * 1.15f;
             float dist = Vector3.Distance(cam.transform.position, chest);
-            if (dist > 85f)
-                continue;
-
             Vector3 screen = cam.WorldToScreenPoint(chest);
             if (screen.z <= 0.2f)
+                continue;
+            float pixels = Vector2.Distance(new Vector2(screen.x, screen.y), center);
+            bool zooming = body == _zoomStick;
+            float limit = pixels <= tight || zooming ? 220f : 85f;
+            if (dist > limit || pixels > reach)
                 continue;
             if (screen.x < -80f || screen.y < -80f || screen.x > Screen.width + 80f || screen.y > Screen.height + 80f)
                 continue;
 
-            float pixels = Vector2.Distance(new Vector2(screen.x, screen.y), center);
-            if (pixels > reach)
-                continue;
             if (pixels < bestPixels)
             {
                 bestPixels = pixels;
                 best = body;
             }
+
+            if (zooming && pixels <= hold && dist <= 220f && ClearView(cam, chest))
+            {
+                _aimTight = true;
+                _aimDist = dist;
+                _aimWorld = chest;
+            }
+        }
+
+        if (_zoomStick != null && !_aimTight)
+            _zoomStick = null;
+
+        if (_zoomStick == null && best != null && bestPixels <= tight)
+        {
+            Vector3 chest = best.transform.position + Vector3.up * 1.15f;
+            if (ClearView(cam, chest))
+            {
+                _zoomStick = best;
+                _aimTight = true;
+                _aimDist = Vector3.Distance(cam.transform.position, chest);
+                _aimWorld = chest;
+            }
         }
 
         return best;
+    }
+
+    static bool ClearView(Camera cam, Vector3 chest)
+    {
+        Vector3 from = cam.transform.position;
+        Vector3 delta = chest - from;
+        float dist = delta.magnitude;
+        if (dist < 0.8f)
+            return true;
+        return !Physics.Raycast(from, delta / dist, dist - 0.35f, ~(1 << 2), QueryTriggerInteraction.Ignore);
     }
 }

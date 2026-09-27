@@ -5,6 +5,10 @@ public class CharacterVisual : MonoBehaviour
     Animator _animator;
     PlayerMotor _motor;
     string _state = "";
+    Vector3 _restPos;
+    bool _restCaptured;
+    Transform _wink;
+    Vector3 _eyeScale;
 
     public Transform Muzzle { get; private set; }
 
@@ -34,6 +38,7 @@ public class CharacterVisual : MonoBehaviour
         animator.applyRootMotion = false;
         animator.runtimeAnimatorController = CityArt.Moves;
         animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+        animator.updateMode = AnimatorUpdateMode.UnscaledTime;
         if (CityArt.Moves != null)
             animator.CrossFade("Idle1", 0f);
 
@@ -73,7 +78,14 @@ public class CharacterVisual : MonoBehaviour
 
     void Update()
     {
-        if (_animator == null || _animator.runtimeAnimatorController == null || _motor == null)
+        if (_animator == null || _animator.runtimeAnimatorController == null)
+            return;
+
+        if (!GameMenu.Playing)
+            return;
+
+        transform.localRotation = Quaternion.identity;
+        if (_motor == null)
             return;
 
         string next = "Idle1";
@@ -86,5 +98,69 @@ public class CharacterVisual : MonoBehaviour
 
         _state = next;
         _animator.CrossFade(next, 0.12f);
+    }
+
+    void LateUpdate()
+    {
+        if (_animator == null)
+            return;
+
+        if (!GameMenu.Playing)
+        {
+            TitleMotion();
+            return;
+        }
+
+        if (_restCaptured)
+            transform.localPosition = _restPos;
+        if (_wink != null)
+            _wink.localScale = _eyeScale;
+    }
+
+    void TitleMotion()
+    {
+        if (!_restCaptured)
+        {
+            _restPos = transform.localPosition;
+            _restCaptured = true;
+            _wink = FindBone("EyeLeft");
+            if (_wink == null)
+                _wink = FindBone("Eye_L");
+            if (_wink != null)
+                _eyeScale = _wink.localScale;
+        }
+
+        float t = Mathf.Repeat(Time.unscaledTime, 3.4f);
+        bool jumping = t < 0.72f;
+        float hop = jumping ? Mathf.Sin(t / 0.72f * Mathf.PI) * 0.62f : 0f;
+        transform.localPosition = _restPos + Vector3.up * hop;
+
+        string pose = jumping ? "PistolAim" : "Idle1";
+        _animator.speed = 1f;
+        if (pose != _state)
+        {
+            _state = pose;
+            _animator.CrossFade(_state, 0.12f);
+        }
+
+        if (_wink == null)
+            return;
+
+        bool wink = t > 0.28f && t < 0.46f;
+        Vector3 scale = _eyeScale;
+        scale.y = wink ? _eyeScale.y * 0.05f : _eyeScale.y;
+        _wink.localScale = scale;
+    }
+
+    Transform FindBone(string boneName)
+    {
+        Transform[] bones = GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < bones.Length; i++)
+        {
+            if (bones[i].name == boneName)
+                return bones[i];
+        }
+
+        return null;
     }
 }

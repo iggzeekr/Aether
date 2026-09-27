@@ -14,6 +14,15 @@ public class CityCamera : MonoBehaviour
     float _pitch = 16f;
     bool _snap;
     bool _firstPerson;
+    bool _title;
+    Vector3 _aimWorld;
+    float _aimWeight;
+
+    public void SetAim(Vector3 world, float weight)
+    {
+        _aimWorld = world;
+        _aimWeight = Mathf.Clamp01(weight);
+    }
 
     public void Follow(Transform target, Vector3 pivot, float distance, bool snap)
     {
@@ -44,6 +53,26 @@ public class CityCamera : MonoBehaviour
     {
         if (Target == null)
             return;
+
+        if (!GameMenu.Playing)
+        {
+            TitleShot();
+            _title = true;
+            return;
+        }
+
+        if (_title)
+        {
+            _title = false;
+            _firstPerson = false;
+            Distance = 6.2f;
+            _yaw = Target.eulerAngles.y;
+            _pitch = 16f;
+            _snap = true;
+            Camera view = GetComponent<Camera>();
+            if (view != null)
+                view.fieldOfView = 68f;
+        }
 
         if (_firstPerson)
         {
@@ -93,10 +122,26 @@ public class CityCamera : MonoBehaviour
             transform.position = Vector3.Lerp(transform.position, desired, t);
         }
 
-        Vector3 lookAt = pivot;
+        Vector3 lookAt = _aimWeight > 0.02f
+            ? Vector3.Lerp(pivot + Vector3.up * 0.45f, _aimWorld, _aimWeight)
+            : pivot;
         Vector3 lookDir = lookAt - transform.position;
         if (lookDir.sqrMagnitude > 0.001f)
             transform.rotation = Quaternion.LookRotation(lookDir, Vector3.up);
+    }
+
+    void TitleShot()
+    {
+        Camera view = GetComponent<Camera>();
+        if (view != null)
+            view.fieldOfView = 36f;
+
+        float yaw = 180f + Mathf.Sin(Time.unscaledTime * 0.38f) * 24f;
+        Vector3 pivot = Target.position + new Vector3(0f, 1.2f, 0f);
+        Vector3 offset = Quaternion.Euler(-8f, yaw, 0f) * new Vector3(0f, 0.05f, -3.15f);
+        transform.position = pivot + offset;
+        transform.LookAt(pivot);
+        transform.LookAt(pivot - transform.right * 1.15f);
     }
 
     void Cockpit()

@@ -10,6 +10,7 @@ public class LabInterior : MonoBehaviour
     public static int Completed => _instance == null ? 0 : _instance._done;
     public static int CurrentStep => _instance == null ? 0 : _instance.NextStep();
     public static float TimeLeft => _instance == null ? 0f : _instance._timeLeft;
+    public static bool ClearedOnce { get; private set; }
 
     public static readonly string[] Names =
     {
@@ -347,6 +348,7 @@ public class LabInterior : MonoBehaviour
             for (int i = 0; i < _spots.Length; i++)
                 _spots[i].Reset();
             _done = 0;
+            ClearedOnce = true;
             if (door != null)
                 LabDoor.ActivateNext(door.transform.position);
             if (CityGame.Instance != null)
@@ -421,6 +423,7 @@ public class LabInterior : MonoBehaviour
         bounds = BoundsOf(model.GetComponentsInChildren<Renderer>());
         float lift = (Origin.y + floorY) - bounds.min.y;
         model.transform.position += Vector3.up * lift;
+        CityBuilder.Block(model);
     }
 
     static Bounds BoundsOf(Renderer[] renderers)

@@ -22,6 +22,13 @@ public class CityGame : MonoBehaviour
     string _banner;
     float _bannerUntil;
     string _deathLine;
+    float _runLeft = -1f;
+    int _nagMinute = 5;
+    bool _runOver;
+    bool _runWon;
+    bool _gameOver;
+    int _lives = 3;
+    GUIStyle _runTime;
     GUIStyle _promptStyle;
     GUIStyle _taskTitle;
     GUIStyle _taskName;
@@ -206,18 +213,21 @@ public class CityGame : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetMouseButtonDown(1))
-            Cursor.lockState = CursorLockMode.Locked;
-        if (Input.GetMouseButtonUp(1) || Input.GetKeyDown(KeyCode.Escape))
-            Cursor.lockState = CursorLockMode.None;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        if (_minimap != null)
+            _minimap.enabled = GameMenu.Playing;
 
-        if (_downUntil > 0f && Time.time >= _downUntil)
+        TickRun();
+
+        if (_downUntil > 0f && Time.time >= _downUntil && !_gameOver)
         {
             _downUntil = 0f;
             _vital.Fill();
             _vital.SafeUntil = Time.time + 2.2f;
             Teleport(_spawn, Quaternion.identity, 6.2f);
-            _motor.Locked = false;
+            if (!_runOver)
+                _motor.Locked = false;
         }
 
         bool driving = _currentCar != null;
@@ -262,7 +272,15 @@ public class CityGame : MonoBehaviour
         }
 
         _camera.SpeedPull = 0f;
-        _camera.GetComponent<Camera>().fieldOfView = _currentCar != null ? Mathf.Lerp(74f, 86f, speed01) : 68f;
+        if (GameMenu.Playing)
+        {
+            Camera view = _camera.GetComponent<Camera>();
+            float cruise = _currentCar != null ? Mathf.Lerp(74f, 86f, speed01) : 68f;
+            float zoom = _currentCar != null || _combat == null ? 0f : _combat.Zoom;
+            float want = Mathf.Lerp(cruise, 14f, zoom);
+            float blend = 1f - Mathf.Exp(-7f * Time.deltaTime);
+            view.fieldOfView = Mathf.Lerp(view.fieldOfView, want, blend);
+        }
     }
 
     void LateUpdate()
@@ -299,8 +317,11 @@ public class CityGame : MonoBehaviour
 
         EnsureTaskUi();
         DrawHealth();
+        DrawRunClock();
         DrawCrosshair();
+        DrawScope();
         DrawBanner();
+        DrawGameOver();
         if (LabInterior.IsInside)
             DrawTaskBoard();
         else
@@ -359,6 +380,12 @@ public class CityGame : MonoBehaviour
             alignment = TextAnchor.MiddleCenter
         };
         _bannerStyle.normal.textColor = new Color(0.9f, 0.96f, 1f);
+        _runTime = new GUIStyle(GUI.skin.label)
+        {
+            fontSize = 22,
+            fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.MiddleCenter
+        };
         _promptBg = Pixel(new Color(0.07f, 0.1f, 0.15f, 0.94f));
         _promptBar = Pixel(new Color(0.25f, 0.72f, 0.9f, 1f));
         _taskBg = Pixel(new Color(0.06f, 0.09f, 0.13f, 0.94f));
@@ -368,6 +395,79 @@ public class CityGame : MonoBehaviour
         _hpBg = Pixel(new Color(0.08f, 0.1f, 0.12f, 0.9f));
         _hpFill = Pixel(new Color(0.25f, 0.78f, 0.9f, 1f));
         _hpLow = Pixel(new Color(0.9f, 0.28f, 0.22f, 1f));
+    }
+
+    void TickRun()
+    {
+        if (!GameMenu.Playing || _runOver || _runWon)
+            return;
+
+        if (_runLeft < 0f)
+        {
+            _runLeft = 300f;
+            _nagMinute = 5;
+            Banner("Five minutes. Finish the mission. Go.");
+            return;
+        }
+
+        _runLeft -= Time.deltaTime;
+        if (MissionClear())
+        {
+            _runWon = true;
+            Banner("Mission complete");
+            return;
+        }
+
+        if (_runLeft <= 0f)
+        {
+            _runLeft = 0f;
+            _runOver = true;
+            if (_currentCar != null)
+                ExitCar();
+            LabInterior.Eject();
+            _motor.Locked = true;
+            Banner("Time's up");
+            return;
+        }
+
+        int minute = Mathf.CeilToInt(_runLeft / 60f);
+        if (minute < _nagMinute && minute > 0)
+        {
+            _nagMinute = minute;
+            Banner(Nag(minute));
+        }
+    }
+
+    static bool MissionClear()
+    {
+        return LabInterior.ClearedOnce
+            && SkyRing.Total > 0 && SkyRing.Cleared >= SkyRing.Total
+            && FieldScan.Total > 0 && FieldScan.DoneCount >= FieldScan.Total;
+    }
+
+    static string Nag(int minute)
+    {
+        if (minute >= 4)
+            return "Four minutes left. Time is running out. Hurry.";
+        if (minute == 3)
+            return "Three minutes. Finish your tasks. Move.";
+        if (minute == 2)
+            return "Two minutes. Your time is slipping. Go.";
+        return "One minute. Complete the mission. Now.";
+    }
+
+    void DrawRunClock()
+    {
+        if (_runTime == null)
+            return;
+
+        int secs = Mathf.CeilToInt(Mathf.Max(0f, _runLeft));
+        _runTime.normal.textColor = secs <= 60 ? new Color(1f, 0.42f, 0.32f) : new Color(0.75f, 0.95f, 1f);
+        var panel = new Rect(Screen.width - 132f, 18f, 114f, 58f);
+        GUI.DrawTexture(panel, _taskBg);
+        GUI.DrawTexture(new Rect(panel.x, panel.y, 3f, panel.height), _promptBar);
+        GUI.Label(new Rect(panel.x + 8f, panel.y + 4f, panel.width - 12f, 16f), "TIME", _taskTitle);
+        GUI.Label(new Rect(panel.x + 6f, panel.y + 22f, panel.width - 12f, 28f), secs / 60 + ":" + (secs % 60).ToString("00"), _runTime);
     }
 
     void DrawHealth()
@@ -380,6 +480,7 @@ public class CityGame : MonoBehaviour
         float ratio = _vital.Max <= 0f ? 0f : Mathf.Clamp01(_vital.Current / _vital.Max);
         GUI.DrawTexture(new Rect(bar.x, bar.y, bar.width * ratio, bar.height), ratio < 0.35f ? _hpLow : _hpFill);
         GUI.Label(new Rect(bar.x + 8f, bar.y - 1f, 80f, bar.height), "HP", _taskTitle);
+        GUI.Label(new Rect(bar.xMax + 10f, bar.y - 1f, 90f, bar.height), "LIVES  " + _lives, _taskTitle);
     }
 
     void DrawCrosshair()
@@ -395,26 +496,72 @@ public class CityGame : MonoBehaviour
         GUI.DrawTexture(new Rect(x - arm, y - 1f, arm * 2f, 2f), mark);
     }
 
+    void DrawScope()
+    {
+        if (_combat == null || _combat.Zoom < 0.4f || _promptBar == null)
+            return;
+
+        float x = Screen.width * 0.5f;
+        float y = Screen.height * 0.5f;
+        float span = Mathf.Lerp(70f, 128f, _combat.Zoom);
+        float len = 22f;
+        float thick = 2f;
+        Corner(x - span, y - span, len, thick, 1f, 1f);
+        Corner(x + span, y - span, len, thick, -1f, 1f);
+        Corner(x - span, y + span, len, thick, 1f, -1f);
+        Corner(x + span, y + span, len, thick, -1f, -1f);
+    }
+
+    void Corner(float x, float y, float len, float thick, float hx, float hy)
+    {
+        GUI.DrawTexture(new Rect(hx > 0f ? x : x - len, y - thick * 0.5f, len, thick), _promptBar);
+        GUI.DrawTexture(new Rect(x - thick * 0.5f, hy > 0f ? y : y - len, thick, len), _promptBar);
+    }
+
     void DrawBanner()
     {
         if (string.IsNullOrEmpty(_banner) || Time.time > _bannerUntil)
             return;
-        var rect = new Rect(Screen.width * 0.5f - 180f, 28f, 360f, 36f);
+        float width = Mathf.Min(680f, Screen.width - 170f);
+        var rect = new Rect((Screen.width - width) * 0.5f, 22f, width, 40f);
         GUI.DrawTexture(rect, _promptBg);
         GUI.Label(rect, _banner, _bannerStyle);
     }
 
     void OnPlayerDown()
     {
-        if (_downUntil > 0f)
+        if (_downUntil > 0f || _gameOver)
             return;
-        _downUntil = Time.time + 1.25f;
+
         if (_currentCar != null)
             ExitCar();
         LabInterior.Eject();
         _motor.Locked = true;
-        Banner(string.IsNullOrEmpty(_deathLine) ? "You were hit" : _deathLine);
+        _lives = Mathf.Max(0, _lives - 1);
+        if (_lives <= 0)
+        {
+            _gameOver = true;
+            _downUntil = 0f;
+            _deathLine = null;
+            Banner("Game over");
+            return;
+        }
+
+        _downUntil = Time.time + 1.25f;
+        string why = string.IsNullOrEmpty(_deathLine) ? "You were hit" : _deathLine;
         _deathLine = null;
+        Banner(why + "    " + _lives + " left");
+    }
+
+    void DrawGameOver()
+    {
+        if (!_gameOver || _bannerStyle == null)
+            return;
+
+        var rect = new Rect(Screen.width * 0.5f - 220f, Screen.height * 0.36f, 440f, 72f);
+        GUI.DrawTexture(rect, _promptBg);
+        GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width, 3f), _hpLow);
+        GUI.Label(rect, "GAME OVER", _bannerStyle);
     }
 
     void DrawCityBoard()
@@ -512,6 +659,11 @@ public class CityGame : MonoBehaviour
         SetShipVisible(car, false);
         _cockpit = true;
         _camera.FirstPerson(car.transform, new Vector3(0f, 0.9f, 0.35f), true);
+        if (_combat != null)
+            _combat.ClearZoom();
+        Camera view = _camera.GetComponent<Camera>();
+        if (view != null)
+            view.fieldOfView = 74f;
     }
 
     void ExitCar()

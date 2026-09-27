@@ -150,8 +150,8 @@ public static class CityBuilder
 
     static void LampPost(Transform parent, Vector3 position)
     {
-        Visual(parent, "Direk", position + new Vector3(0f, 2.2f, 0f), new Vector3(0.12f, 4.4f, 0.12f), new Color(0.2f, 0.22f, 0.24f), 0.3f);
-        Visual(parent, "Lamba", position + new Vector3(0f, 4.45f, 0f), new Vector3(0.45f, 0.12f, 0.45f), new Color(1f, 0.92f, 0.7f), 0.6f);
+        Visual(parent, "Direk", position + new Vector3(0f, 2.2f, 0f), new Vector3(0.12f, 4.4f, 0.12f), new Color(0.2f, 0.22f, 0.24f), 0.3f, true);
+        Visual(parent, "Lamba", position + new Vector3(0f, 4.45f, 0f), new Vector3(0.45f, 0.12f, 0.45f), new Color(1f, 0.92f, 0.7f), 0.6f, true);
         var lamp = new GameObject("SokakLambasi");
         lamp.transform.SetParent(parent, false);
         lamp.transform.position = position + new Vector3(0f, 4.2f, 0f);
@@ -427,10 +427,11 @@ public static class CityBuilder
                 Collider[] colliders = prop.GetComponentsInChildren<Collider>();
                 for (int c = 0; c < colliders.Length; c++)
                     colliders[c].enabled = false;
+                Block(prop);
             }
             else
             {
-                Visual(parent, "Saksı", corners[i] + new Vector3(0f, 0.35f, 0f), new Vector3(0.7f, 0.7f, 0.7f), new Color(0.2f, 0.55f, 0.38f), 0.15f);
+                Visual(parent, "Saksı", corners[i] + new Vector3(0f, 0.35f, 0f), new Vector3(0.7f, 0.7f, 0.7f), new Color(0.2f, 0.55f, 0.38f), 0.15f, true);
             }
         }
     }
@@ -444,8 +445,8 @@ public static class CityBuilder
         {
             float x = originX + inner * (0.25f + 0.25f * i);
             float z = originZ + inner * (0.3f + 0.18f * (i % 2));
-            Visual(parent, "Govde", new Vector3(x, 1.3f, z), new Vector3(0.35f, 2.2f, 0.35f), trunk, 0.05f);
-            Visual(parent, "Kafa", new Vector3(x, 2.8f, z), new Vector3(2.2f, 1.6f, 2.2f), leaf, 0.1f);
+            Visual(parent, "Govde", new Vector3(x, 1.3f, z), new Vector3(0.35f, 2.2f, 0.35f), trunk, 0.05f, true);
+            Visual(parent, "Kafa", new Vector3(x, 2.8f, z), new Vector3(2.2f, 1.6f, 2.2f), leaf, 0.1f, true);
         }
         Visual(parent, "Cam", new Vector3(originX + inner * 0.5f, 0.28f, originZ + inner * 0.5f), new Vector3(inner * 0.7f, 0.08f, inner * 0.7f), grass, 0.02f);
     }
@@ -676,7 +677,26 @@ public static class CityBuilder
         return go;
     }
 
-    static GameObject Visual(Transform parent, string name, Vector3 localPosition, Vector3 scale, Color color, float smoothness)
+    public static void Block(GameObject model)
+    {
+        Renderer[] renderers = model.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0)
+            return;
+
+        Bounds world = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+            world.Encapsulate(renderers[i].bounds);
+        if (world.size.y < 0.25f)
+            return;
+
+        var blocker = new GameObject("Engel");
+        blocker.transform.SetPositionAndRotation(world.center, Quaternion.identity);
+        var box = blocker.AddComponent<BoxCollider>();
+        box.size = world.size * 0.92f;
+        blocker.transform.SetParent(model.transform, true);
+    }
+
+    static GameObject Visual(Transform parent, string name, Vector3 localPosition, Vector3 scale, Color color, float smoothness, bool solid = false)
     {
         var go = GameObject.CreatePrimitive(name == "Kafa" || name == "Isaret" ? PrimitiveType.Sphere : PrimitiveType.Cube);
         if (name == "Teker")
@@ -689,7 +709,8 @@ public static class CityBuilder
         go.transform.localPosition = localPosition;
         go.transform.localScale = scale;
         go.GetComponent<Renderer>().sharedMaterial = Material(color, smoothness);
-        Object.Destroy(go.GetComponent<Collider>());
+        if (!solid)
+            Object.Destroy(go.GetComponent<Collider>());
         return go;
     }
 
