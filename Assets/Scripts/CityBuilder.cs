@@ -28,6 +28,7 @@ public static class CityBuilder
     public static Vector3 Build()
     {
         Random.InitState(23);
+        StreetLight.Clear();
         CityArt.Load();
         LabDoor.Reset();
         var root = new GameObject("Sehir");
@@ -161,6 +162,7 @@ public static class CityBuilder
         light.range = 16f;
         light.intensity = 1.3f;
         light.shadows = LightShadows.None;
+        lamp.AddComponent<StreetLight>();
     }
 
     public static void SpawnShips()

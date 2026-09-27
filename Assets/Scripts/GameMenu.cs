@@ -157,8 +157,10 @@ public class GameMenu : MonoBehaviour
         Row(ref yLeft, left, colW, rowH, gap, "SPACE", "Jump  /  climb");
         Row(ref yLeft, left, colW, rowH, gap, "CTRL", "Descend");
         Row(ref yLeft, left, colW, rowH, gap, "MOUSE", "Look");
+        Row(ref yLeft, left, colW, rowH, gap, "V", "Ship camera");
 
         Section(ref yRight, right, "MISSION");
+        Row(ref yRight, right, colW, rowH, gap, "AIM", "Zoom button");
         Row(ref yRight, right, colW, rowH, gap, "CLICK", "Fire");
         Row(ref yRight, right, colW, rowH, gap, "F", "Board ship");
         Row(ref yRight, right, colW, rowH, gap, "E", "Do a task");

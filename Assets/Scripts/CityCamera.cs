@@ -14,6 +14,7 @@ public class CityCamera : MonoBehaviour
     float _pitch = 16f;
     bool _snap;
     bool _firstPerson;
+    bool _chase;
     bool _title;
     Vector3 _aimWorld;
     float _aimWeight;
@@ -27,6 +28,7 @@ public class CityCamera : MonoBehaviour
     public void Follow(Transform target, Vector3 pivot, float distance, bool snap)
     {
         _firstPerson = false;
+        _chase = false;
         Target = target;
         PivotOffset = pivot;
         Distance = distance;
@@ -41,12 +43,19 @@ public class CityCamera : MonoBehaviour
     public void FirstPerson(Transform target, Vector3 seat, bool snap)
     {
         _firstPerson = true;
+        _chase = false;
         Target = target;
         PivotOffset = seat;
         Distance = 0f;
         SpeedPull = 0f;
         _pitch = 0f;
         _snap = snap;
+    }
+
+    public void Chase(Transform target, Vector3 pivot, float distance, bool snap)
+    {
+        Follow(target, pivot, distance, snap);
+        _chase = true;
     }
 
     void LateUpdate()
@@ -80,7 +89,13 @@ public class CityCamera : MonoBehaviour
             return;
         }
 
-        if (Input.GetMouseButton(1))
+        if (_chase && !Input.GetMouseButton(1))
+        {
+            float follow = 1f - Mathf.Exp(-6f * Time.deltaTime);
+            _yaw = Mathf.LerpAngle(_yaw, Target.eulerAngles.y, follow);
+            _pitch = Mathf.Lerp(_pitch, 16f, follow);
+        }
+        else if (Input.GetMouseButton(1))
         {
             _yaw += Input.GetAxis("Mouse X") * LookSensitivity;
             _pitch -= Input.GetAxis("Mouse Y") * LookSensitivity * 0.7f;
@@ -124,7 +139,7 @@ public class CityCamera : MonoBehaviour
 
         Vector3 lookAt = _aimWeight > 0.02f
             ? Vector3.Lerp(pivot + Vector3.up * 0.45f, _aimWorld, _aimWeight)
-            : pivot;
+            : _chase ? pivot + Target.forward * 16f : pivot;
         Vector3 lookDir = lookAt - transform.position;
         if (lookDir.sqrMagnitude > 0.001f)
             transform.rotation = Quaternion.LookRotation(lookDir, Vector3.up);

@@ -12,6 +12,7 @@ public class PlayerCombat : MonoBehaviour
 
     public bool LockedOn { get; private set; }
     public float Zoom { get; private set; }
+    public bool ZoomHeld { get; private set; }
     bool _aimTight;
     float _aimDist;
     Vector3 _aimWorld;
@@ -20,10 +21,16 @@ public class PlayerCombat : MonoBehaviour
     public void ClearZoom()
     {
         Zoom = 0f;
+        ZoomHeld = false;
         _zoomStick = null;
         _aimTight = false;
         if (_camera != null)
             _camera.SetAim(Vector3.zero, 0f);
+    }
+
+    public void ToggleZoom()
+    {
+        ZoomHeld = !ZoomHeld;
     }
 
     public void Bind(CityCamera camera, Transform muzzle)
@@ -75,19 +82,20 @@ public class PlayerCombat : MonoBehaviour
         else
         {
             target = cam == null ? null : PickTarget(cam);
-            float wantZoom = _aimTight ? Mathf.InverseLerp(8f, 120f, _aimDist) : 0f;
+            float wantZoom = ZoomHeld ? 1f : 0f;
             Zoom = Mathf.MoveTowards(Zoom, wantZoom, Time.deltaTime * 3.4f);
-            _camera.SetAim(_aimWorld, Zoom);
+            _camera.SetAim(_aimWorld, ZoomHeld && _aimTight ? Zoom : 0f);
         }
 
         LockedOn = target != null;
 
-        if (!Input.GetMouseButton(0) || Time.time < _next || cam == null)
+        if (!Input.GetMouseButton(0) || Time.time < _next || cam == null || CityGame.PointerOnAim())
             return;
 
         _next = Time.time + 0.18f;
-        Vector3 direction = cam.transform.forward;
-        float lead = driving ? 9f : 0.6f;
+        bool behind = driving && CityGame.Instance.ShipBehind;
+        Vector3 direction = behind ? CityGame.Instance.DrivingForward() : cam.transform.forward;
+        float lead = behind ? 18f : driving ? 9f : 0.6f;
         Vector3 origin = cam.transform.position + direction * lead;
 
         if (target != null)

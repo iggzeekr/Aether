@@ -28,6 +28,9 @@ public class CityGame : MonoBehaviour
     bool _runWon;
     bool _gameOver;
     int _lives = 3;
+    bool _lightsOn;
+    bool _duskWarned;
+    Light _sun;
     GUIStyle _runTime;
     GUIStyle _promptStyle;
     GUIStyle _taskTitle;
@@ -48,6 +51,12 @@ public class CityGame : MonoBehaviour
     public Transform Player => _player;
     public Vital Body => _vital;
     public bool Driving => _currentCar != null;
+    public bool ShipBehind => _currentCar != null && !_cockpit;
+
+    public Vector3 DrivingForward()
+    {
+        return _currentCar == null ? Vector3.forward : _currentCar.transform.forward;
+    }
 
     public void Banner(string text)
     {
@@ -185,6 +194,7 @@ public class CityGame : MonoBehaviour
 
     void SetupSun()
     {
+        _sun = null;
         Light sun = null;
         Light[] lights = FindObjectsByType<Light>(FindObjectsSortMode.None);
         for (int i = 0; i < lights.Length; i++)
@@ -207,6 +217,7 @@ public class CityGame : MonoBehaviour
         sun.intensity = 1.05f;
         sun.color = new Color(1f, 0.96f, 0.88f);
         sun.shadows = LightShadows.Soft;
+        _sun = sun;
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
         RenderSettings.ambientLight = new Color(0.5f, 0.56f, 0.64f);
     }
@@ -241,13 +252,10 @@ public class CityGame : MonoBehaviour
                 EnterCar(_nearestCar);
         }
 
+        if (driving && Input.GetKeyDown(KeyCode.V))
+            ToggleShipView();
+
         float speed01 = 0f;
-        if (_currentCar != null && !_cockpit)
-        {
-            _cockpit = true;
-            SetShipVisible(_currentCar, false);
-            _camera.FirstPerson(_currentCar.transform, new Vector3(0f, 0.9f, 0.35f), true);
-        }
 
         if (_currentCar != null)
         {
@@ -266,7 +274,12 @@ public class CityGame : MonoBehaviour
         {
             FollowMinimap(_player);
             if (!LabInterior.IsInside && Input.GetKeyDown(KeyCode.E))
-                FieldScan.TryNearest(_player.position);
+            {
+                if (!_lightsOn && StreetLight.Near(_player.position, 4.2f))
+                    SwitchLights();
+                else
+                    FieldScan.TryNearest(_player.position);
+            }
             if (!LabInterior.IsInside && _player.position.y < -8f)
                 _player.position = _spawn;
         }
@@ -280,6 +293,39 @@ public class CityGame : MonoBehaviour
             float want = Mathf.Lerp(cruise, 14f, zoom);
             float blend = 1f - Mathf.Exp(-7f * Time.deltaTime);
             view.fieldOfView = Mathf.Lerp(view.fieldOfView, want, blend);
+            ApplyDusk();
+        }
+    }
+
+    void SwitchLights()
+    {
+        _lightsOn = true;
+        StreetLight.IgniteAll();
+        Banner("Lights on");
+    }
+
+    void ApplyDusk()
+    {
+        if (_runLeft < 0f)
+            return;
+
+        float elapsed = 300f - _runLeft;
+        float dusk = Mathf.Clamp01((elapsed - 120f) / 28f);
+        Color dayAmbient = new Color(0.5f, 0.56f, 0.64f);
+        Color nightAmbient = _lightsOn ? new Color(0.16f, 0.18f, 0.24f) : new Color(0.02f, 0.025f, 0.04f);
+        RenderSettings.ambientLight = Color.Lerp(dayAmbient, nightAmbient, dusk);
+        if (_sun != null)
+        {
+            _sun.intensity = Mathf.Lerp(1.05f, _lightsOn ? 0.18f : 0.02f, dusk);
+            _sun.color = Color.Lerp(new Color(1f, 0.96f, 0.88f), new Color(0.35f, 0.42f, 0.62f), dusk);
+        }
+
+        if (!LabInterior.IsInside)
+        {
+            Camera view = _camera.GetComponent<Camera>();
+            Color daySky = new Color(0.42f, 0.62f, 0.84f);
+            Color nightSky = _lightsOn ? new Color(0.05f, 0.07f, 0.12f) : new Color(0.01f, 0.012f, 0.02f);
+            view.backgroundColor = Color.Lerp(daySky, nightSky, dusk);
         }
     }
 
@@ -292,9 +338,11 @@ public class CityGame : MonoBehaviour
             ? LabInterior.Prompt
             : LabDoor.PromptFor(_player.position, Driving);
         if (_currentCar != null)
-            _prompt = null;
+            _prompt = "V   Camera";
         else if (!LabInterior.IsInside && string.IsNullOrEmpty(_prompt))
             _prompt = FieldScan.PromptNear(_player.position);
+        if (_currentCar == null && !LabInterior.IsInside && string.IsNullOrEmpty(_prompt) && !_lightsOn && StreetLight.Near(_player.position, 4.2f))
+            _prompt = "E   Turn on the lights";
         if (_currentCar == null && string.IsNullOrEmpty(_prompt) && _nearestCar != null)
             _prompt = "F   Board ship";
     }
@@ -322,6 +370,7 @@ public class CityGame : MonoBehaviour
         DrawScope();
         DrawBanner();
         DrawGameOver();
+        DrawAimButton();
         if (LabInterior.IsInside)
             DrawTaskBoard();
         else
@@ -436,6 +485,14 @@ public class CityGame : MonoBehaviour
             _nagMinute = minute;
             Banner(Nag(minute));
         }
+
+        if (!_duskWarned && _runLeft <= 180f)
+        {
+            _duskWarned = true;
+            Banner(_lightsOn
+                ? "Night is falling. The lights are on."
+                : "Turn the lights on first, or you will be left in the dark.");
+        }
     }
 
     static bool MissionClear()
@@ -470,6 +527,32 @@ public class CityGame : MonoBehaviour
         GUI.Label(new Rect(panel.x + 6f, panel.y + 22f, panel.width - 12f, 28f), secs / 60 + ":" + (secs % 60).ToString("00"), _runTime);
     }
 
+    public static bool PointerOnAim()
+    {
+        if (Instance == null || !GameMenu.Playing || Instance._currentCar != null)
+            return false;
+        var mouse = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
+        return AimRect().Contains(mouse);
+    }
+
+    static Rect AimRect()
+    {
+        return new Rect(Screen.width - 96f, Screen.height * 0.5f - 38f, 76f, 76f);
+    }
+
+    void DrawAimButton()
+    {
+        if (_currentCar != null || _taskBg == null || _combat == null)
+            return;
+
+        Rect rect = AimRect();
+        bool held = _combat.ZoomHeld;
+        GUI.DrawTexture(rect, held ? _taskOn : _taskBg);
+        GUI.DrawTexture(new Rect(rect.x, rect.y, 3f, rect.height), held ? _hpLow : _promptBar);
+        if (GUI.Button(rect, "AIM", _promptStyle))
+            _combat.ToggleZoom();
+    }
+
     void DrawHealth()
     {
         if (_vital == null)
@@ -485,7 +568,7 @@ public class CityGame : MonoBehaviour
 
     void DrawCrosshair()
     {
-        if (_currentCar != null || _vital == null || !_vital.Alive)
+        if ((_currentCar != null && _cockpit) || _vital == null || !_vital.Alive)
             return;
 
         const float arm = 7f;
@@ -664,6 +747,20 @@ public class CityGame : MonoBehaviour
         Camera view = _camera.GetComponent<Camera>();
         if (view != null)
             view.fieldOfView = 74f;
+    }
+
+    void ToggleShipView()
+    {
+        _cockpit = !_cockpit;
+        if (_cockpit)
+        {
+            SetShipVisible(_currentCar, false);
+            _camera.FirstPerson(_currentCar.transform, new Vector3(0f, 0.9f, 0.35f), true);
+            return;
+        }
+
+        SetShipVisible(_currentCar, true);
+        _camera.Chase(_currentCar.transform, new Vector3(0f, 1.8f, 0f), 14f, true);
     }
 
     void ExitCar()
