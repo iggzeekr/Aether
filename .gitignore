@@ -1,0 +1,56 @@
+# Third-party asset packs. Import these yourself; they are not in the repo.
+Assets/FreeTestCharacterAsuna/
+Assets/FreeTestCharacterAsuna.meta
+Assets/HiRezSpaceshipsCreatorFree/
+Assets/HiRezSpaceshipsCreatorFree.meta
+Assets/Sci-Fi Styled Modular Pack/
+Assets/Sci-Fi Styled Modular Pack.meta
+Assets/MyAssets/
+Assets/MyAssets.meta
+
+# Unity generated
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# IDE
+.vs/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Crash / addressables leftovers
+sysinfo.txt
+*.apk
+*.aab
+*.unitypackage
+*.app
+crashlytics-buildid.txt
+InitTestScene*.unity
+.utmp/
+.consulo/
+ExportedObj/
+.plastic/
