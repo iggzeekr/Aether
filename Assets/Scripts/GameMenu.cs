@@ -11,6 +11,8 @@ public class GameMenu : MonoBehaviour
     GUIStyle _action;
     GUIStyle _note;
     GUIStyle _story;
+    GUIStyle _centerTitle;
+    GUIStyle _centerKicker;
     GUIStyle _quote;
     GUIStyle _button;
     Texture2D _dim;
@@ -118,7 +120,7 @@ public class GameMenu : MonoBehaviour
     {
         float contentH = 640f * _scale;
         float travel = contentH + view.height;
-        float y = view.height - Mathf.Repeat(Time.unscaledTime * 14f * _scale, travel);
+        float y = view.height - Mathf.Repeat(Time.unscaledTime * 26f * _scale, travel);
         GUI.BeginGroup(view);
         GUI.Label(new Rect(8f, y, view.width - 16f, contentH), story, _story);
         GUI.EndGroup();
@@ -158,6 +160,7 @@ public class GameMenu : MonoBehaviour
         Row(ref yLeft, left, colW, rowH, gap, "CTRL", "Descend");
         Row(ref yLeft, left, colW, rowH, gap, "MOUSE", "Look");
         Row(ref yLeft, left, colW, rowH, gap, "V", "Ship camera");
+        Row(ref yLeft, left, colW, rowH, gap, "M", "City map");
 
         Section(ref yRight, right, "MISSION");
         Row(ref yRight, right, colW, rowH, gap, "AIM", "Zoom button");
@@ -206,8 +209,10 @@ public class GameMenu : MonoBehaviour
         _key = Make(Mathf.RoundToInt(11f * scale), FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.75f, 0.94f, 1f));
         _action = Make(Mathf.RoundToInt(13f * scale), FontStyle.Normal, TextAnchor.MiddleLeft, new Color(0.9f, 0.94f, 0.97f));
         _note = Make(Mathf.RoundToInt(11f * scale), FontStyle.Bold, TextAnchor.MiddleLeft, new Color(1f, 0.82f, 0.28f));
-        _story = Make(Mathf.RoundToInt(14f * scale), FontStyle.Bold, TextAnchor.UpperCenter, new Color(1f, 0.86f, 0.32f));
+        _story = Make(Mathf.RoundToInt(20f * scale), FontStyle.Bold, TextAnchor.UpperCenter, new Color(1f, 0.86f, 0.32f));
         _story.wordWrap = true;
+        _centerTitle = Make(Mathf.RoundToInt(40f * scale), FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.9f, 0.97f, 1f));
+        _centerKicker = Make(Mathf.RoundToInt(12f * scale), FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.45f, 0.82f, 0.95f));
         _quote = Make(Mathf.RoundToInt(13f * scale), FontStyle.Bold, TextAnchor.MiddleCenter, new Color(0.95f, 0.9f, 0.55f));
         _quote.wordWrap = true;
         _button = Make(Mathf.RoundToInt(13f * scale), FontStyle.Bold, TextAnchor.MiddleCenter, Color.white);

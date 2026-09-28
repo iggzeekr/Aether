@@ -15,6 +15,14 @@ public static class CityArt
     public static GameObject Pistol { get; private set; }
     public static GameObject Rifle { get; private set; }
     public static GameObject[] Ships { get; private set; }
+    public static GameObject Bomber { get; private set; }
+    public static GameObject BayFloor { get; private set; }
+    public static GameObject BayWall { get; private set; }
+    public static GameObject BayRoof { get; private set; }
+    public static GameObject BayDoor { get; private set; }
+    public static Material SpaceSky { get; private set; }
+    public static Material StarSky { get; private set; }
+    public static Texture2D EarthFace { get; private set; }
 
     static bool _loaded;
 
@@ -67,6 +75,19 @@ public static class CityArt
             Load("Assets/HiRezSpaceshipsCreatorFree/Prefabs/Examples/Example5_Grey.prefab"),
             Load("Assets/HiRezSpaceshipsCreatorFree/Prefabs/ExamplesNoInterior/Example1NoInterior_Grey.prefab")
         };
+        Bomber = Load("Assets/Hessburg - Stealth Bomber/Prefabs/Stealth_Bomber.prefab");
+        if (Bomber == null)
+            Bomber = Load("Assets/Hessburg - Stealth Bomber/Stealth_Bomber.fbx");
+        BayFloor = Load("Assets/Barking_Dog/3D Free Modular Kit/Prefabs/Floor_01.prefab");
+        BayWall = Load("Assets/Barking_Dog/3D Free Modular Kit/Prefabs/Wall_Simple_01.prefab");
+        BayRoof = Load("Assets/Barking_Dog/3D Free Modular Kit/Prefabs/Roof_01.prefab");
+        BayDoor = Load("Assets/Barking_Dog/3D Free Modular Kit/Prefabs/Door_Arch_01.prefab");
+        SpaceSky = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(
+            "Assets/Stagit/SkyboxEarthPlanets/skyboxes/skyboxv1_earthfar.mat");
+        StarSky = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(
+            "Assets/Stagit/SkyboxEarthPlanets/skyboxes/skyboxv1_starsonly.mat");
+        EarthFace = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(
+            "Assets/Stagit/SkyboxEarthPlanets/textures/skyboxv1_earthfar/earth300001.png");
 #else
         Facades = new GameObject[0];
 #endif

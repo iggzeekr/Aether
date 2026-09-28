@@ -4,6 +4,16 @@ Unity ile sıfırdan kurulmuş, oynanabilir bir bilim-kurgu şehir oyunu. Amacı
 
 ---
 
+## Oyun özeti
+
+AETHER’in çekirdeği sönmek üzere. Asuna, şehrin içinde kalan son bilim insanı. Beş dakikası, üç canı, bir gemisi var.
+
+Bitirmesi gereken üç iş var: laboratuvardaki sekiz görev, sokaktaki on sinyal kulesi, gökyüzündeki halkalar. Üçünü de süre bitmeden tamamlarsa görev biter. Süre biterse oyun kilitlenir. Üç kez ölürse **Game over**.
+
+İki dakika sonra gece çöker. Sokak lambasını **E** ile yakmazsa karanlıkta kalır. Bekçi robotlar onu tanımaz, ateş eder. O da ateş eder.
+
+---
+
 ## Bu projede ne öğrenmek istedim??
 
 Küçük parçaları ayrı ayrı değil, tek bir oyunun içinde bir arada tutmak:
@@ -15,7 +25,7 @@ Küçük parçaları ayrı ayrı değil, tek bir oyunun içinde bir arada tutmak
 
 ## Nasıl oynanır
 
-Unity’de projeyi aç. Sahne boş görünür. **Play**’e bas. Başlangıç ekranı gelir. **Enter** veya sol tık ile başla.
+Unity’de projeyi aç. Sahne boş görünür. **Play**’e bas. Solda hikâye yukarı kayar, sağda Asuna durur. **HOW TO PLAY** kontrolleri açar, **BACK** hikâyeye döner. **Enter** veya **START** ile oyun başlar. Beş dakikalık süre o anda akar.
 
 | Tuş | Ne yapar |
 | --- | --- |
@@ -23,17 +33,23 @@ Unity’de projeyi aç. Sahne boş görünür. **Play**’e bas. Başlangıç ek
 | Shift | Koş |
 | Space | Zıpla. Gemideyken yüksel |
 | Ctrl veya C | Gemide alçal |
-| F | Gemiye bin. Yükseklik 8 metrenin altındayken in |
-| E | Laboratuvar işi, sokaktaki sinyal kulesi, kapı |
-| Sol tık | Ateş. Artı kırmızıysa yakındaki robota kilitlenir |
 | Sağ tık basılı | Kamerayı çevir |
+| Sol tık | Ateş |
+| AIM | Sağdaki tuş. Basınca kamera yakınlaşır, tekrar basınca açılır |
+| F | Gemiye bin. Yükseklik 8 metrenin altındayken in |
+| V | Gemide kokpit ile üçüncü kişi arasında geç |
+| E | Laboratuvar işi, sinyal kulesi, kapı. Lambanın yanında ışıkları yakar |
 | Turkuaz kapı | Laboratuvara gir |
 
-Laboratuvarın sekiz işi var. Süre **60 saniye**. Bitirmezsen dışarı atılırsın, işler sıfırlanır. Çizelge yalnız içeride görünür.
+Sağ üstte süre var. Can çubuğunun yanında **LIVES** yazar. Üç can. Her ölüm bir hak yer, sonra aynı yerde devam edersin.
 
-Sokakta on sinyal kulesi var. Gökyüzünde halkalar var. Gemiyle halkanın içinden geç. Bunların sayacı şehirde, altta.
+Laboratuvarın sekiz işi var ve içeri girince ayrı bir **60 saniye** başlar. Yetişmezsen dışarı atılırsın, o tur sayılmaz. Çizelge yalnız içeride görünür.
 
-Can sol üstte. Robot yakında ve ekrandaysa tek atış onu devirir. Bir süre sonra kalkar.
+Sokakta on sinyal kulesi var. Gökyüzünde halkalar var. Gemiyle halkanın içinden geç. Şehirdeki sayaç altta durur.
+
+İki dakika dolunca hava kararır. Bir lambaya yaklaşıp **E** bas. Işıklar yanarsa gece de görürsün.
+
+Robot ekranda ve nişandaysa tek atış onu devirir. Bir süre sonra kalkar. Gemide sağ tık bakış, sol tık ateş aynı şekilde durur. Hızlı çarpışma öldürür. Yavaşça yanaşıp **F** ile inebilirsin.
 
 ---
 
@@ -60,7 +76,7 @@ Hepsi `Assets/Scripts` altında. Ayrı bir sahne yöneticisi yok. `CityGame` omu
 | `CityArt` | Modelleri editörde yükler |
 | `PlayerMotor` | Yürü, koş, zıpla |
 | `CharacterVisual` | Asuna modeli ve tabanca soketi |
-| `CityCamera` | Üçüncü şahıs. Gemide birinci şahıs |
+| `CityCamera` | Yürürken üçüncü şahıs. Gemide V ile kokpit veya takip |
 | `DriveableCar` | Geminin uçuş fiziği |
 | `LabDoor` / `LabInterior` | Kapı, oda, sekiz iş, süre |
 | `FieldScan` | Sokaktaki on kule |

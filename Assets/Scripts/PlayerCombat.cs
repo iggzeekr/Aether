@@ -65,7 +65,8 @@ public class PlayerCombat : MonoBehaviour
             LockedOn = false;
             _zoomStick = null;
             Zoom = Mathf.MoveTowards(Zoom, 0f, Time.deltaTime * 3f);
-            _camera.SetAim(_aimWorld, Zoom);
+            _camera.LookZoom = Zoom;
+            _camera.SetAim(_aimWorld, 0f);
             return;
         }
 
@@ -75,6 +76,7 @@ public class PlayerCombat : MonoBehaviour
         {
             _zoomStick = null;
             Zoom = 0f;
+            _camera.LookZoom = 0f;
             _camera.SetAim(Vector3.zero, 0f);
             target = cam == null ? null : PickTarget(cam);
             _aimTight = false;
@@ -84,12 +86,13 @@ public class PlayerCombat : MonoBehaviour
             target = cam == null ? null : PickTarget(cam);
             float wantZoom = ZoomHeld ? 1f : 0f;
             Zoom = Mathf.MoveTowards(Zoom, wantZoom, Time.deltaTime * 3.4f);
+            _camera.LookZoom = Zoom;
             _camera.SetAim(_aimWorld, ZoomHeld && _aimTight ? Zoom : 0f);
         }
 
         LockedOn = target != null;
 
-        if (!Input.GetMouseButton(0) || Time.time < _next || cam == null || CityGame.PointerOnAim())
+        if (!Input.GetMouseButton(0) || Time.time < _next || cam == null || CityGame.PointerOnAim() || CityGame.PointerOnMinimap() || CityGame.Instance.MapOpen || !ShipVoyage.Landed)
             return;
 
         _next = Time.time + 0.18f;

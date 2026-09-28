@@ -12,7 +12,7 @@ public class LabDoor : MonoBehaviour
     Transform _beacon;
     float _cooldown;
 
-    public Vector3 ExitPoint => transform.position + transform.forward * 3.8f;
+    public Vector3 ExitPoint => transform.position + transform.forward * 12f;
     public Quaternion ExitRotation => Quaternion.LookRotation(transform.forward, Vector3.up);
 
     public static void Reset()
@@ -26,7 +26,7 @@ public class LabDoor : MonoBehaviour
     public static void TryCreate(Transform building, float depth)
     {
         _seen++;
-        if (_created >= 8 || _seen % 5 != 0)
+        if (_created >= 8 || _seen % 70 != 15)
             return;
 
         var go = new GameObject("LaboratuvarKapisi");
@@ -47,6 +47,31 @@ public class LabDoor : MonoBehaviour
         door.BuildVisual();
         All.Add(door);
         return door;
+    }
+
+    public static void ActivateFar(Vector3 from, float minDistance)
+    {
+        LabDoor best = null;
+        float bestDistance = float.MaxValue;
+        LabDoor farthest = null;
+        float farthestDistance = -1f;
+        float minSqr = minDistance * minDistance;
+        for (int i = 0; i < All.Count; i++)
+        {
+            float distance = (All[i].transform.position - from).sqrMagnitude;
+            if (distance > farthestDistance)
+            {
+                farthestDistance = distance;
+                farthest = All[i];
+            }
+
+            if (distance < minSqr || distance >= bestDistance)
+                continue;
+            bestDistance = distance;
+            best = All[i];
+        }
+
+        SetActive(best != null ? best : farthest);
     }
 
     public static void ActivateClosest(Vector3 from)
@@ -108,8 +133,8 @@ public class LabDoor : MonoBehaviour
         var beam = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         beam.name = "Isaret";
         beam.transform.SetParent(transform, false);
-        beam.transform.localPosition = new Vector3(0f, 9f, 0f);
-        beam.transform.localScale = new Vector3(0.4f, 9f, 0.4f);
+        beam.transform.localPosition = new Vector3(0f, 16f, 0f);
+        beam.transform.localScale = new Vector3(0.28f, 8f, 0.28f);
         Destroy(beam.GetComponent<Collider>());
         beam.GetComponent<Renderer>().sharedMaterial = Glow(new Color(0.25f, 0.95f, 1f));
         _beacon = beam.transform;

@@ -30,6 +30,8 @@ public class CityGame : MonoBehaviour
     int _lives = 3;
     bool _lightsOn;
     bool _duskWarned;
+    bool _mapOpen;
+    bool _aboard;
     Light _sun;
     GUIStyle _runTime;
     GUIStyle _promptStyle;
@@ -49,8 +51,10 @@ public class CityGame : MonoBehaviour
     Texture2D _hpLow;
 
     public Transform Player => _player;
+    public Vector3 SpawnPoint => _spawn;
     public Vital Body => _vital;
     public bool Driving => _currentCar != null;
+    public bool MapOpen => _mapOpen;
     public bool ShipBehind => _currentCar != null && !_cockpit;
 
     public Vector3 DrivingForward()
@@ -101,8 +105,23 @@ public class CityGame : MonoBehaviour
         SetupCamera();
         SetupSun();
         LabInterior.Build();
-        LabDoor.CreateAt(_spawn + new Vector3(0f, -0.25f, 8f), Quaternion.LookRotation(Vector3.back));
-        LabDoor.ActivateClosest(_spawn);
+        LabDoor.ActivateFar(_spawn, 90f);
+        ShipVoyage.Build();
+    }
+
+    public void LockForLanding()
+    {
+        _motor.Locked = true;
+        _controller.enabled = false;
+        SetPlayerVisible(false);
+    }
+
+    public void UnlockAfterLanding()
+    {
+        SetPlayerVisible(true);
+        _controller.enabled = true;
+        if (!_runOver && !_gameOver)
+            _motor.Locked = false;
     }
 
     void CreatePlayer()
@@ -227,7 +246,40 @@ public class CityGame : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
         if (_minimap != null)
-            _minimap.enabled = GameMenu.Playing;
+            _minimap.enabled = GameMenu.Playing && ShipVoyage.Landed && !_mapOpen;
+
+        if (GameMenu.Playing && ShipVoyage.Landed && !LabInterior.IsInside && (Input.GetKeyDown(KeyCode.M) || (Input.GetMouseButtonDown(0) && PointerOnMinimap())))
+            _mapOpen = !_mapOpen;
+        if (!ShipVoyage.Landed || LabInterior.IsInside)
+            _mapOpen = false;
+        if (GameMenu.Playing && ShipVoyage.Landed)
+            Time.timeScale = _mapOpen ? 0f : 1f;
+
+        if (_downUntil > 0f && Time.time >= _downUntil && !_gameOver)
+        {
+            _downUntil = 0f;
+            _vital.Fill();
+            _vital.SafeUntil = Time.time + 2.2f;
+            if (!ShipVoyage.Landed)
+                ShipVoyage.Begin(this);
+            else
+            {
+                Teleport(_spawn, Quaternion.identity, 6.2f);
+                if (!_runOver)
+                    _motor.Locked = false;
+            }
+        }
+
+        if (GameMenu.Playing && !ShipVoyage.Landed)
+        {
+            if (!_aboard)
+            {
+                _aboard = true;
+                ShipVoyage.Begin(this);
+            }
+            ShipVoyage.Advance(this);
+            return;
+        }
 
         TickRun();
 
@@ -334,6 +386,12 @@ public class CityGame : MonoBehaviour
         if (_currentCar != null && _currentCar.transform.position.y < -8f)
             _currentCar.ResetPose();
 
+        if (!ShipVoyage.Landed)
+        {
+            _prompt = ShipVoyage.Prompt;
+            return;
+        }
+
         _prompt = LabInterior.IsInside
             ? LabInterior.Prompt
             : LabDoor.PromptFor(_player.position, Driving);
@@ -364,26 +422,46 @@ public class CityGame : MonoBehaviour
             return;
 
         EnsureTaskUi();
+        if (!ShipVoyage.Landed)
+        {
+            DrawBanner();
+            if (!string.IsNullOrEmpty(ShipVoyage.Goal) && _bannerStyle != null)
+            {
+                var goal = new Rect(Screen.width * 0.5f - 280f, 22f, 560f, 36f);
+                GUI.DrawTexture(goal, _promptBg);
+                GUI.Label(goal, ShipVoyage.Goal, _bannerStyle);
+            }
+            if (!string.IsNullOrEmpty(_prompt))
+            {
+                var rect = new Rect(Screen.width * 0.5f - 210f, Screen.height - 72f, 420f, 36f);
+                GUI.DrawTexture(rect, _promptBg);
+                GUI.Label(rect, _prompt, _promptStyle);
+            }
+            return;
+        }
         DrawHealth();
         DrawRunClock();
         DrawCrosshair();
         DrawScope();
         DrawBanner();
         DrawGameOver();
-        DrawAimButton();
+        if (!_mapOpen)
+            DrawAimButton();
         if (LabInterior.IsInside)
             DrawTaskBoard();
         else
             DrawCityBoard();
 
-        if (string.IsNullOrEmpty(_prompt))
-            return;
+        if (!string.IsNullOrEmpty(_prompt))
+        {
+            float promptY = LabInterior.IsInside ? Screen.height - 168f : Screen.height - 72f;
+            var rect = new Rect(Screen.width * 0.5f - 210f, promptY, 420f, 36f);
+            GUI.DrawTexture(rect, _promptBg);
+            GUI.DrawTexture(new Rect(rect.x, rect.y, 4f, rect.height), _promptBar);
+            GUI.Label(rect, _prompt, _promptStyle);
+        }
 
-        float promptY = LabInterior.IsInside ? Screen.height - 168f : Screen.height - 72f;
-        var rect = new Rect(Screen.width * 0.5f - 210f, promptY, 420f, 36f);
-        GUI.DrawTexture(rect, _promptBg);
-        GUI.DrawTexture(new Rect(rect.x, rect.y, 4f, rect.height), _promptBar);
-        GUI.Label(rect, _prompt, _promptStyle);
+        DrawWorldMap();
     }
 
     void EnsureTaskUi()
@@ -448,7 +526,7 @@ public class CityGame : MonoBehaviour
 
     void TickRun()
     {
-        if (!GameMenu.Playing || _runOver || _runWon)
+        if (!GameMenu.Playing || !ShipVoyage.Landed || _runOver || _runWon)
             return;
 
         if (_runLeft < 0f)
@@ -527,6 +605,18 @@ public class CityGame : MonoBehaviour
         GUI.Label(new Rect(panel.x + 6f, panel.y + 22f, panel.width - 12f, 28f), secs / 60 + ":" + (secs % 60).ToString("00"), _runTime);
     }
 
+    public static bool PointerOnMinimap()
+    {
+        if (Instance == null || !ShipVoyage.Landed || Instance._mapOpen)
+            return false;
+        var mouse = Input.mousePosition;
+        float x = 0.015f * Screen.width;
+        float y = 0.025f * Screen.height;
+        float w = 0.2f * Screen.width;
+        float h = 0.26f * Screen.height;
+        return mouse.x >= x && mouse.x <= x + w && mouse.y >= y && mouse.y <= y + h;
+    }
+
     public static bool PointerOnAim()
     {
         if (Instance == null || !GameMenu.Playing || Instance._currentCar != null)
@@ -551,6 +641,87 @@ public class CityGame : MonoBehaviour
         GUI.DrawTexture(new Rect(rect.x, rect.y, 3f, rect.height), held ? _hpLow : _promptBar);
         if (GUI.Button(rect, "AIM", _promptStyle))
             _combat.ToggleZoom();
+    }
+
+    void DrawWorldMap()
+    {
+        if (!_mapOpen || _taskBg == null || _player == null)
+            return;
+
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), _taskBg);
+        GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), _hpBg);
+        float side = Mathf.Min(Screen.width - 80f, Screen.height - 120f);
+        var map = new Rect((Screen.width - side) * 0.5f, (Screen.height - side) * 0.5f, side, side);
+        GUI.DrawTexture(map, _taskBg);
+        GUI.DrawTexture(new Rect(map.x, map.y, map.width, 3f), _promptBar);
+        DrawDistricts(map);
+        GUI.Label(new Rect(map.x, map.y + 6f, map.width, 24f), "MAP", _bannerStyle);
+        GUI.Label(new Rect(map.x, map.yMax + 8f, map.width, 22f), "M    Close", _taskTitle);
+
+        float half = CityLayout.Half;
+        Vector2 activeSpot = Vector2.zero;
+        bool hasLab = false;
+        for (int i = 0; i < LabDoor.All.Count; i++)
+        {
+            LabDoor door = LabDoor.All[i];
+            if (door == null)
+                continue;
+            Vector2 spot = MapPoint(door.transform.position, map, half);
+            bool active = door == LabDoor.Active;
+            float mark = active ? 22f : 10f;
+            if (active)
+            {
+                hasLab = true;
+                activeSpot = spot;
+                GUI.DrawTexture(new Rect(spot.x - 16f, spot.y - 16f, 32f, 32f), _hpLow);
+            }
+            GUI.DrawTexture(new Rect(spot.x - mark * 0.5f, spot.y - mark * 0.5f, mark, mark), _promptBar);
+        }
+
+        Vector2 player = MapPoint(_player.position, map, half);
+        GUI.DrawTexture(new Rect(player.x - 11f, player.y - 11f, 22f, 22f), _hpFill);
+        GUI.DrawTexture(new Rect(player.x - 5f, player.y - 5f, 10f, 10f), _taskOn);
+        Vector3 nose = _player.position + _player.forward * (half * 0.03f);
+        Vector2 tip = MapPoint(nose, map, half);
+        GUI.DrawTexture(new Rect(tip.x - 4f, tip.y - 4f, 8f, 8f), _hpLow);
+        GUI.Label(new Rect(player.x - 28f, player.y - 36f, 56f, 20f), "YOU", _bannerStyle);
+        if (hasLab)
+        {
+            bool tight = Vector2.Distance(activeSpot, player) < 72f;
+            float labX = tight ? activeSpot.x - 78f : activeSpot.x - 22f;
+            float labY = tight ? activeSpot.y - 8f : activeSpot.y + 18f;
+            GUI.Label(new Rect(labX, labY, 56f, 20f), "LAB", _bannerStyle);
+        }
+    }
+
+    void DrawDistricts(Rect map)
+    {
+        if (_taskIdle == null)
+            return;
+        float half = CityLayout.Half;
+        float inset = CityLayout.Road * 0.42f;
+        for (int ix = 0; ix < CityLayout.Blocks; ix++)
+        {
+            for (int iz = 0; iz < CityLayout.Blocks; iz++)
+            {
+                float x0 = -half + ix * CityLayout.Cell + inset;
+                float z0 = -half + iz * CityLayout.Cell + inset;
+                float x1 = -half + (ix + 1) * CityLayout.Cell - inset;
+                float z1 = -half + (iz + 1) * CityLayout.Cell - inset;
+                Vector2 a = MapPoint(new Vector3(x0, 0f, z1), map, half);
+                Vector2 b = MapPoint(new Vector3(x1, 0f, z0), map, half);
+                var block = Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
+                GUI.DrawTexture(block, (ix + iz) % 5 == 0 ? _taskOn : _taskIdle);
+            }
+        }
+    }
+
+    static Vector2 MapPoint(Vector3 world, Rect map, float half)
+    {
+        float u = Mathf.InverseLerp(-half, half, world.x);
+        float v = Mathf.InverseLerp(-half, half, world.z);
+        const float pad = 36f;
+        return new Vector2(map.x + pad + u * (map.width - pad * 2f), map.yMax - pad - v * (map.height - pad * 2f));
     }
 
     void DrawHealth()

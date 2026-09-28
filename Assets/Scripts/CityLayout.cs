@@ -2,7 +2,7 @@ using UnityEngine;
 
 public static class CityLayout
 {
-    public const int Blocks = 10;
+    public const int Blocks = 14;
     public const float Cell = 44f;
     public const float Road = 14f;
     public const float SidewalkWidth = 3.4f;

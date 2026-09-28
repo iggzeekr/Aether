@@ -464,6 +464,10 @@ public static class CityBuilder
             CreateWalker(parent, new Vector3(line - shoulder, 0.22f, 80f - i * 13f), Vector3.back);
             CreateWalker(parent, new Vector3(line - shoulder, 0.22f, -15f - i * 9f), Vector3.back);
             CreateWalker(parent, new Vector3(-55f + i * 12f, 0.22f, line + shoulder), Vector3.right);
+            CreateWalker(parent, new Vector3(line + shoulder, 0.22f, -120f + i * 17f), Vector3.forward);
+            CreateWalker(parent, new Vector3(line - shoulder, 0.22f, 140f - i * 15f), Vector3.back);
+            CreateWalker(parent, new Vector3(40f + i * 13f, 0.22f, line - shoulder), Vector3.left);
+            CreateWalker(parent, new Vector3(line + shoulder * 0.4f, 0.22f, -30f - i * 10f), Vector3.forward);
         }
     }
 
