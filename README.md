@@ -64,8 +64,6 @@ Robot ekranda ve nişandaysa tek atış onu devirir. Bir süre sonra kalkar. Gem
 2. **Uç.** Gemiye bin, yüksel, halkadan geç, alçal, in. İnmek için önce yere yaklaşmak gerekiyor. Gökyüzünde F işe yaramaz.
 3. **Laboratuvar.** İçeri gir, numaralı işleri sırayla bitir, süre bitmeden çık.
 
-Çatışma dördüncü döngü. Robotlar sürekli saldırmaz. Yaklaşınca durur, nişan alır, turuncu ışık atar. Senin ışığın mavi.
-
 ---
 
 ## Kodun haritası
