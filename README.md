@@ -2,6 +2,9 @@
 
 Unity ile sıfırdan kurulmuş, oynanabilir bir bilim-kurgu şehir oyunu. Amacım bir mağaza oyunu çıkarmak değil. Amacım oyun tasarımını, sahne kurmayı, kamerayı, görev döngüsünü öğrenmek.
 
+AETHER’in çekirdeği sönmek üzere. Asuna, şehrin içinde kalan son bilim insanı. Beş dakikası, üç canı ve gemisi var.
+Bitirmesi gereken üç iş var: laboratuvardaki sekiz görev, sokaktaki on sinyal kulesi, gökyüzündeki halkalar. Üçünü de süre bitmeden tamamlarsa görev biter. Süre biterse oyun kilitlenir. Üç kez ölürse **Game over**.Aynı zamanda uzay gemileriyle çarpışırsa canı azalır
+İki dakika sonra gece çöker. Sokak lambasını yakamazsa karanlıkta kalır.
 ---
 
 ## Oyun özeti
