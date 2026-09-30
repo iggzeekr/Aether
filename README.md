@@ -4,10 +4,6 @@
 
 
 Unity ile sıfırdan kurulmuş, oynanabilir bir bilim-kurgu şehir oyunu. Amacım bir mağaza oyunu çıkarmak değil. Amacım oyun tasarımını, sahne kurmayı, kamerayı, görev döngüsünü öğrenmek.
-
-AETHER’in çekirdeği sönmek üzere. Asuna, şehrin içinde kalan son bilim insanı. Beş dakikası, üç canı ve gemisi var.
-Bitirmesi gereken üç iş var: laboratuvardaki sekiz görev, sokaktaki on sinyal kulesi, gökyüzündeki halkalar. Üçünü de süre bitmeden tamamlarsa görev biter. Süre biterse oyun kilitlenir. Üç kez ölürse **Game over**.Aynı zamanda uzay gemileriyle çarpışırsa canı azalır
-İki dakika sonra gece çöker. Sokak lambasını yakamazsa karanlıkta kalır.
 ---
 
 ## Oyun özeti
@@ -18,16 +14,6 @@ Bitirmesi gereken üç iş var: laboratuvardaki sekiz görev, sokaktaki on sinya
 
 İki dakika sonra gece çöker. Sokak lambasını **E** ile yakmazsa karanlıkta kalır. Bekçi robotlar onu tanımaz, ateş eder. O da ateş eder.
 
----
-
-## Bu projede ne öğrenmek istedim??
-
-Küçük parçaları ayrı ayrı değil, tek bir oyunun içinde bir arada tutmak:
-
-- Oyuncu ne yapıyor, neden tekrar yapmak istiyor.
-- Hazır model ile kendi kodunun birbirine uyması. Model duruyor diye oyun durmaz. Materyal, kemik, pivot ve collider ayrı problemler.
-
----
 
 ## Nasıl oynanır
 
@@ -48,13 +34,9 @@ Unity’de projeyi aç. Sahne boş görünür. **Play**’e bas. Solda hikâye y
 | Turkuaz kapı | Laboratuvara gir |
 
 Sağ üstte süre var. Can çubuğunun yanında **LIVES** yazar. Üç can. Her ölüm bir hak yer, sonra aynı yerde devam edersin.
-
 Laboratuvarın sekiz işi var ve içeri girince ayrı bir **60 saniye** başlar. Yetişmezsen dışarı atılırsın, o tur sayılmaz. Çizelge yalnız içeride görünür.
-
 Sokakta on sinyal kulesi var. Gökyüzünde halkalar var. Gemiyle halkanın içinden geç. Şehirdeki sayaç altta durur.
-
 İki dakika dolunca hava kararır. Bir lambaya yaklaşıp **E** bas. Işıklar yanarsa gece de görürsün.
-
 Robot ekranda ve nişandaysa tek atış onu devirir. Bir süre sonra kalkar. Gemide sağ tık bakış, sol tık ateş aynı şekilde durur. Hızlı çarpışma öldürür. Yavaşça yanaşıp **F** ile inebilirsin.
 
 ---
