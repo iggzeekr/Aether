@@ -1,4 +1,7 @@
 # AETHER
+<img width="800" height="400" alt="image" src="https://github.com/user-attachments/assets/172f07e0-7822-45fb-b3ad-043c52a075ca" />
+<img width="800" height="400" alt="image" src="https://github.com/user-attachments/assets/f9c481fb-8a3b-4efc-8cca-eb956cd48d7a" />
+
 
 Unity ile sıfırdan kurulmuş, oynanabilir bir bilim-kurgu şehir oyunu. Amacım bir mağaza oyunu çıkarmak değil. Amacım oyun tasarımını, sahne kurmayı, kamerayı, görev döngüsünü öğrenmek.
 
@@ -196,6 +199,86 @@ Neden: `CityArt`, `AssetDatabase.LoadAssetAtPath` kullanıyor. Bu API yalnız ed
 Ne yaptım: Şimdilik oyun Unity editöründe, Play ile oynanıyor. Bilerek böyle. Öğrenme projesi.
 
 Ders: Editör kısayolu, oyuncu build’i değil. Dışarı çıkacak sürüm için modellerin `Resources`, Addressables ya da sahneye konmuş referans olması gerekir.
+
+### 11. Açılış yazısı ekranda durmuyordu
+
+Belirti: Yazı yamuk gidiyor, titreyerek geliyor, dünya kayboluyor. Bir karede Asuna’nın arkası, geminin düz gövdesi, boş siyah uzay.
+
+Neden: Yazıyı 2B döndürünce satırlar eğildi. Font boyutu her kare değişince harfler titredi. Kamera düz renk temizliyorsa skybox görünmez. Dünya dokusu karenin bir yanında, diğer yanı yıldız. Kamerayı çevirince ya yalnız dünya ya yalnız boşluk kalıyor.
+
+Ne yaptım: Menü `OnGUI` ile solda bir `Rect` panel. Yazı `GUI.Label`. Kayma `Time.unscaledTime` ile yukarı gidiyor. `timeScale` menüde 0, `Enter` ile 1. `GUIUtility.RotateAroundPivot` yok, font boyutu her kare değişmiyor. `CityCamera`, oyun başlamadan `CameraClearFlags.SolidColor` kullanıyor, skybox çizilmiyor. `Enter` sonrası `ShipVoyage.Begin` oyuncuyu kabin koordinatına ışınlıyor.
+
+Ders: Açılış sayfası ile görevin ilk odası ayrı. Birini düzeltmek diğerini silmek değil.
+
+### 12. Geminin tavanından dışarı görünüyordu
+
+Belirti: Kabindeyim. Tavandan dünya giriyor.
+
+Neden: Ön duvar alçaktı, tavan kapalı değildi. Kamera skybox temizleyince boşluk gökyüzü oldu.
+
+Ne yaptım: Kabin duvarları tam boy kutu. Tavan ayrı bir kutu collider. Binince kamera `CameraClearFlags.SolidColor`, `RenderSettings.skybox` bu karede görünmüyor. `SetCabin` adım değişince kabindeki `Light` rengini ve `RenderSettings.ambientLight` değerini değiştiriyor. Sıra mavi, çekirdek altın, kapak camgöbeği.
+
+Ders: Kapalı oda skybox ile kapanmaz. Delik varsa gökyüzü içeri girer.
+
+### 13. Harita ya boştu ya kâğıt ızgarasıydı
+
+Belirti: Laboratuvarlar sol kenarda. **YOU** ile **LAB** üst üste. Sonra kalın çizgiler grafik kâğıdı gibi.
+
+Neden: İlk kapılar batıdaki binalardaydı. Dünya X’i haritanın soluna sıkıştı. Yol çizgisi kalın olunca ada değil ızgara okundu. Oyuncu ile kapı aynı renkteydi.
+
+Ne yaptım: `LabDoor.TryCreate` her binada kapı açmıyor. Sayaç 70’de bir ve en fazla 8 kapı. Kapılar batı kenarına yığılmıyor. Harita `OnGUI` dikdörtgeni değil. `Texture2D` bir kez boyanıyor: ada dolgusu, sokak boşluğu, park, çatı. `MapPoint` dünya XZ’yi `InverseLerp` ile piksele çeviriyor. Oyuncu oku `GUIUtility.RotateAroundPivot` ile `Transform` yaw’ına dönüyor. Aktif laboratuvar ayrı renk halka.
+
+Ders: Aynı renk iki işareti ayırmaz. Çizginin kalınlığı sokağı bina gibi gösterir.
+
+### 14. Nişan kamerayı bozuyordu
+
+Belirti: Uzaktaki robota dönünce kamera titriyor. Gemiye binince kendiliğinden yakınlaşıyor. Zoom sokağa değil, Asuna’nın üstüne geliyor.
+
+Neden: Görüş açısı ile kamera duvara itilince geri bildirim titreme yaptı. Zoom, biniş anına da bağlıydı. Bakış noktası karakterin gövdesiydi.
+
+Ne yaptım: Zoom, robota bakınca ya da gemiye binince açılmıyor. Sağdaki AIM, `ZoomHeld` değerini tersine çeviriyor. Gemide `LookZoom` 0. Yakın planda bakış noktası karakterin `Transform`’u değil. Kamera konumu artı `orbit.forward * 40`. Görüş açısı duvara itilip geri okunmuyor.
+
+Ders: Yakınlaştırma hedefin üstüne binmek değil. Kameranın baktığı nokta karakterden ayrı durmalı.
+
+### 15. Laboratuvardan çıkınca kapının içinde kaldım
+
+Belirti: Çıkışta ekran turkuaz ışığın içi.
+
+Neden: Çıkış noktası kapının dibiydi. İşaret silindiri kafa hizasındaydı. Kamera onun içine doğdu.
+
+Ne yaptım: `ExitPoint`, kapı `Transform.position + forward * 12`. `Teleport` oyuncuyu bu noktaya koyuyor. İşaret silindirinin `localPosition.y` değeri 16. Kafa hizasında değil.
+
+Ders: Işınlanma noktası ile işaret aynı yer olmasın. İşaret görünsün, içine girilmesin.
+
+### 16. Oyun laboratuvarın önünde başlıyordu
+
+Belirti: Gözümü açınca kapı karşımda. Aramıyorum, görüyorum.
+
+Neden: Kapılar batı sütunundaydı. Başlangıç onlara yakındı.
+
+Ne yaptım: Spawn şehrin ortasına yakın, kapının önü değil. `LabDoor.ActivateFar(spawn, 90)` en az 90 metre uzaktaki kapıyı aktif ediyor. Kapı dünya konumu bina kökünden geliyor. Hepsi aynı X’te değil.
+
+Ders: Görev “görünen kapıya yürü” ise arama yoktur. Mesafe, görevin parçası.
+
+### 17. Level 2 ormanı pakette yoktu
+
+Belirti: Mağaza resminde çam, toprak yol, kaya. Oyunda düz çimen tepe.
+
+Neden: EasyRoads bir yol aracı. Tanıtım karesi o ormanı içermiyor. Test arazisinin ağaç listesi boş.
+
+Ne yaptım: EasyRoads sahnesini `LoadSceneMode.Additive` ile açmayı bıraktım. `LevelTwo` scriptini sildim. Test arazisinin `terrainTrees` listesi boş. Ayrı bir `Terrain` dünyası yok. Oyun tek sahnede, `CityGame` kuruyor.
+
+Ders: Mağaza karesi, indirilen dosya değil. Ağaç var mı diye paketin sahnesine bak.
+
+### Oyunu test amaçlı Dokuz yaşındaki oyuncuya oynattım. Üç şeyi saçma buldu
+
+Oyunu 9 yaşındaki bir çocuğa oynattım. Geri bildirimi not ettim.
+
+Belirti: Atış tek yöne gidiyor. Kameranın baktığı her yöne dönmüyor. Dünya arkada kalıyor. Gemi Dünya’ya gider gibi duruyor, uzay Dünya’nın önünde. Robot bayılınca yere düşmüyor. Yerin üstünde, havada bir eksende asılı kalıyor.
+
+Neden: Atış yönü kameranın serbest bakışıyla aynı değil, bir yöne kilitli. İniş kamerası geminin burnuna bakıyor. Burnu şehre değil uzaya dönük olduğu için Dünya geride kalıyor. Bayılma, modeli yere yatırıp yere indirmek yerine havadaki bir eksende tutuyor.
+
+Ne yaptım: Üçünü de kodda değiştirmedim. Atış hâlâ kameranın o anki `forward` yönü. Serbest çok yön değil. İnişte kamera geminin burnunun arkasına geçiyor. `AimSky` skybox `_Rotation` değerini kamera yaw’ına göre çeviriyor. Dünya önde duran ayrı bir `Transform` değil. Robot düşünce `localRotation = Euler(80, 0, 12)`. `localPosition` yere inmiyor. Model havadaki ekseninde eğik kalıyor.
 
 ---
 
