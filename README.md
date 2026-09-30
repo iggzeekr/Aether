@@ -232,26 +232,6 @@ Ne yaptım: `ExitPoint`, kapı `Transform.position + forward * 12`. `Teleport` o
 
 Ders: Işınlanma noktası ile işaret aynı yer olmasın. İşaret görünsün, içine girilmesin.
 
-### 16. Oyun laboratuvarın önünde başlıyordu
-
-Belirti: Gözümü açınca kapı karşımda. Aramıyorum, görüyorum.
-
-Neden: Kapılar batı sütunundaydı. Başlangıç onlara yakındı.
-
-Ne yaptım: Spawn şehrin ortasına yakın, kapının önü değil. `LabDoor.ActivateFar(spawn, 90)` en az 90 metre uzaktaki kapıyı aktif ediyor. Kapı dünya konumu bina kökünden geliyor. Hepsi aynı X’te değil.
-
-Ders: Görev “görünen kapıya yürü” ise arama yoktur. Mesafe, görevin parçası.
-
-### 17. Level 2 ormanı pakette yoktu
-
-Belirti: Mağaza resminde çam, toprak yol, kaya. Oyunda düz çimen tepe.
-
-Neden: EasyRoads bir yol aracı. Tanıtım karesi o ormanı içermiyor. Test arazisinin ağaç listesi boş.
-
-Ne yaptım: EasyRoads sahnesini `LoadSceneMode.Additive` ile açmayı bıraktım. `LevelTwo` scriptini sildim. Test arazisinin `terrainTrees` listesi boş. Ayrı bir `Terrain` dünyası yok. Oyun tek sahnede, `CityGame` kuruyor.
-
-Ders: Mağaza karesi, indirilen dosya değil. Ağaç var mı diye paketin sahnesine bak.
-
 ### Oyunu test amaçlı Dokuz yaşındaki oyuncuya oynattım. Üç şeyi saçma buldu
 
 Oyunu 9 yaşındaki bir çocuğa oynattım. Geri bildirimi not ettim.
