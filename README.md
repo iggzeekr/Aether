@@ -1,9 +1,17 @@
 # AETHER
-<img width="800" height="400" alt="image" src="https://github.com/user-attachments/assets/172f07e0-7822-45fb-b3ad-043c52a075ca" />
-<img width="800" height="400" alt="image" src="https://github.com/user-attachments/assets/f9c481fb-8a3b-4efc-8cca-eb956cd48d7a" />
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/172f07e0-7822-45fb-b3ad-043c52a075ca" width="48%" alt="Başlangıç ekranı">
+  <img src="https://github.com/user-attachments/assets/f9c481fb-8a3b-4efc-8cca-eb956cd48d7a" width="48%" alt="Oyun ekranı">
+  <img src="https://github.com/user-attachments/assets/6b26a711-9874-4258-afe0-03289e979e1d" width="48%" alt="Oyun ekranı">
+  <img src="https://github.com/user-attachments/assets/50ec3be5-6251-4914-ba49-a0c389751a2a" width="48%" alt="Oyun ekranı">
 
-Unity ile sıfırdan kurulmuş, oynanabilir bir bilim-kurgu şehir oyunu. Amacım bir mağaza oyunu çıkarmak değil. Amacım oyun tasarımını, sahne kurmayı, kamerayı, görev döngüsünü öğrenmek.
+</p>
+
+## 🎮 Gameplay Demo
+[▶ Watch the 5-minute gameplay demo](https://drive.google.com/file/d/1yS3U3DW8PNz1IFcpiKy0IQ09KBbhNgPx/view?usp=sharing)
+
+Unity ile sıfırdan kurulmuş, oynanabilir bir bilim-kurgu şehir oyunu.
 ---
 
 ## Oyun özeti
